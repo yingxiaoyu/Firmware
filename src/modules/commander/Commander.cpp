@@ -558,7 +558,15 @@ Commander::Commander() :
 	_failure_detector(this)
 {
 	_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
-	_auto_disarm_killed.set_hysteresis_time_from(false, 5_s);
+
+	// Check if kill switch should immedietely disarm vehicle
+	if (_param_com_kill_disarm.get()) {
+		_auto_disarm_killed.set_hysteresis_time_from(false, 0_s);
+
+	} else {
+		_auto_disarm_killed.set_hysteresis_time_from(false, 5_s);
+	}
+
 	_battery_sub = orb_subscribe(ORB_ID(battery_status));
 
 
