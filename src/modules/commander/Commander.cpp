@@ -2265,6 +2265,12 @@ Commander::run()
 					if (!_failure_detector_termination_printed) {
 						mavlink_log_critical(&mavlink_log_pub, "Attitude failure detected! Enforcing failsafe");
 						_failure_detector_termination_printed = true;
+
+						// Jake: added logic here
+						armed.force_failsafe = true;
+
+						mavlink_log_critical(&mavlink_log_pub, "Critical failure detected: terminate flight");
+						set_tune_override(TONE_PARACHUTE_RELEASE_TUNE);
 					}
 
 				}
