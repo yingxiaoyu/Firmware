@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2014-2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,22 +32,64 @@
  ****************************************************************************/
 
 /**
- * @file sf0x_parser.cpp
+ * @file sf0x.cpp
  * @author Lorenz Meier <lm@inf.ethz.ch>
+ * @author Greg Hulands
  *
- * Declarations of parser for the Lightware SF0x laser rangefinder series
+ * Driver for the Lightware SF0x laser rangefinder series
  */
 
 #pragma once
 
-enum class SF0X_PARSE {
-	STATE0_UNSYNC = 0,
-	STATE1_SYNC,
-	STATE2_GOT_DIGIT0,
-	STATE3_GOT_DOT,
-	STATE4_GOT_DIGIT1,
-	STATE5_GOT_DIGIT2,
-	STATE6_GOT_CARRIAGE_RETURN
-};
+#include <px4_platform_common/px4_config.h>
+#include <px4_platform_common/getopt.h>
+#include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 
-int sf0x_parser(char c, char *parserbuf, unsigned *parserbuf_index, SF0X_PARSE *state, float *dist);
+#include <termios.h>
+
+#include <lib/perf/perf_counter.h>
+
+#include <drivers/drv_hrt.h>
+#include <drivers/device/device.h>
+#include <lib/parameters/param.h>
+
+#include "sf0x_parser.h"
+
+/* Configuration Constants */
+#define SF0X_TAKE_RANGE_REG		'd'
+
+class SF0X : public px4::ScheduledWorkItem
+{
+public:
+	SF0X(const char *port, uint8_t rotation = distance_sensor_s::ROTATION_DOWNWARD_FACING);
+	virtual ~SF0X();
+
+	int 			init();
+	void			print_info();
+
+private:
+
+	void			Start();
+	void			Stop();
+	void			Run() override;
+
+	int			measure();
+	int			collect();
+
+	char 			_port[20]{};
+
+	int			_conversion_interval{83334};
+	int			_measure_interval{0};
+	bool			_collect_phase{false};
+	int			_fd{-1};
+	char			_linebuf[10]{};
+	unsigned		_linebuf_index{0};
+	SF0X_PARSE		_parse_state{SF0X_PARSE::STATE0_UNSYNC};
+	hrt_abstime		_last_read{0};
+
+	unsigned		_consecutive_fail_count{0};
+
+	perf_counter_t		_sample_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": read")};
+	perf_counter_t		_comms_errors{perf_alloc(PC_COUNT, MODULE_NAME": com err")};
+
+};

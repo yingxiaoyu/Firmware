@@ -50,7 +50,7 @@ bool SF0XTest::sf0xTest()
 			       "\r\n"
 			      };
 
-	enum SF0X_PARSE_STATE state = SF0X_PARSE_STATE0_UNSYNC;
+	enum SF0X_PARSE::STATE state = SF0X_PARSE::STATE0_UNSYNC;
 	float dist_m;
 	char _parserbuf[_LINE_MAX];
 	unsigned _parsebuf_index = 0;
