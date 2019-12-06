@@ -52,12 +52,14 @@
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/pwm_input.h>
 
 typedef enum {
 	FAILURE_NONE = vehicle_status_s::FAILURE_NONE,
 	FAILURE_ROLL = vehicle_status_s::FAILURE_ROLL,
 	FAILURE_PITCH = vehicle_status_s::FAILURE_PITCH,
 	FAILURE_ALT = vehicle_status_s::FAILURE_ALT,
+	FAILURE_EXTERNAL,
 } failure_detector_bitmak;
 
 using uORB::Subscription;
@@ -75,14 +77,21 @@ private:
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::FD_FAIL_P>) _param_fd_fail_p,
-		(ParamInt<px4::params::FD_FAIL_R>) _param_fd_fail_r
+		(ParamInt<px4::params::FD_FAIL_R>) _param_fd_fail_r,
+		(ParamInt<px4::params::SATS_MINI_EN>) _param_sats_mini_en,
+		(ParamInt<px4::params::SATS_MINI_TRIG>) _param_sats_mini_trig
 	)
 
 	// Subscriptions
 	Subscription<vehicle_attitude_s> _sub_vehicle_attitude_setpoint;
 	Subscription<vehicle_attitude_s> _sub_vehicule_attitude;
+	Subscription<pwm_input_s> _sub_pwm_input;
+
 
 	uint8_t _status{FAILURE_NONE};
 
 	bool update_attitude_status();
+
+	bool update_external_trigger_status();
+
 };

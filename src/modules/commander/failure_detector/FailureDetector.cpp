@@ -43,7 +43,8 @@
 FailureDetector::FailureDetector(ModuleParams *parent) :
 	ModuleParams(parent),
 	_sub_vehicle_attitude_setpoint(ORB_ID(vehicle_attitude_setpoint)),
-	_sub_vehicule_attitude(ORB_ID(vehicle_attitude))
+	_sub_vehicule_attitude(ORB_ID(vehicle_attitude)),
+	_sub_pwm_input(ORB_ID(pwm_input))
 {
 }
 
@@ -53,6 +54,12 @@ FailureDetector::update()
 	bool updated(false);
 
 	updated = update_attitude_status();
+
+	// SATS-MINI external monitor
+	if (_param_sats_mini_en.get())
+	{
+		updated |= update_external_trigger_status();
+	}
 
 	return updated;
 }
@@ -96,3 +103,27 @@ FailureDetector::update_attitude_status()
 
 	return updated;
 }
+
+bool
+FailureDetector::update_external_trigger_status()
+{
+	bool updated(false);
+
+	if (_sub_pwm_input.update()) {
+		const pwm_input_s &pwm_input = _sub_pwm_input.get();
+
+		uint32_t pulse_width = pwm_input.pulse_width;
+
+		_status &= ~FAILURE_EXTERNAL;
+
+		if (pulse_width >= (uint32_t)_param_sats_mini_trig.get())
+		{
+			_status |= FAILURE_EXTERNAL;
+		}
+
+		updated = true;
+	}
+
+	return updated;
+}
+

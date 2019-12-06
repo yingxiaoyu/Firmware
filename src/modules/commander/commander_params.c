@@ -918,3 +918,25 @@ PARAM_DEFINE_INT32(COM_ASPD_FS_DLY, 0);
  * @group Commander
  */
 PARAM_DEFINE_INT32(COM_KILL_DISARM, 0);
+
+/**
+ * Enable PWM input for engaging failsafe from a SATS-MINI.
+ *
+ * If...
+ *
+ * @boolean
+ * @reboot_required true
+ * @group Commander
+ */
+PARAM_DEFINE_INT32(SATS_MINI_EN, 0);
+
+/**
+ * PWM trigger threshold for engaging failsafe.
+ *
+ * If...
+ *
+ * @boolean
+ * @reboot_required true
+ * @group Commander
+ */
+PARAM_DEFINE_INT32(SATS_MINI_TRIG, 1990);

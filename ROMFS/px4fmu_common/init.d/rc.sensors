@@ -55,6 +55,13 @@ then
 	fi
 fi
 
+# SATS-MINI
+if param compare SATS_MINI_EN 1
+then
+	pwm_input start
+fi
+
+# SMBus enabled smart battery
 if param compare SENS_EN_BATT 1
 then
 	batt_smbus start -X

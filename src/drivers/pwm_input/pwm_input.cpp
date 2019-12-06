@@ -73,6 +73,7 @@
 #include <systemlib/err.h>
 
 #include <uORB/uORB.h>
+#include <uORB/Publication.hpp>
 #include <uORB/topics/pwm_input.h>
 
 #include <drivers/drv_device.h>
@@ -260,6 +261,9 @@ private:
 	void _turn_off();
 	void _freeze_test();
 
+	// Publish to uORB
+	uORB::Publication<pwm_input_s>	_pwm_input_pub;
+
 };
 
 static int pwmin_tim_isr(int irq, void *context, void *arg);
@@ -278,7 +282,8 @@ PWMIN::PWMIN() :
 	_last_period(0),
 	_last_width(0),
 	_reports(nullptr),
-	_timer_started(false)
+	_timer_started(false),
+	_pwm_input_pub(ORB_ID(pwm_input))
 {
 }
 
@@ -302,11 +307,16 @@ PWMIN::init()
 	 * activate the timer when requested to when the device is opened */
 	CDev::init();
 
+	g_dev->_timer_init();
+
 	_reports = new ringbuffer::RingBuffer(2, sizeof(struct pwm_input_s));
 
 	if (_reports == nullptr) {
 		return -ENOMEM;
 	}
+
+	// TODO: can be removed once all drivers are in threads
+	_pwm_input_pub.update();
 
 	/* Schedule freeze check to invoke periodically */
 	hrt_call_every(&_freeze_test_call, 0, TIMEOUT_POLL, reinterpret_cast<hrt_callout>(&PWMIN::_freeze_test), this);
@@ -424,7 +434,7 @@ PWMIN::open(struct file *filp)
 	int ret = CDev::open(filp);
 
 	if (ret == OK && !_timer_started) {
-		g_dev->_timer_init();
+		// g_dev->_timer_init();
 	}
 
 	return ret;
@@ -502,6 +512,14 @@ void PWMIN::publish(uint16_t status, uint32_t period, uint32_t pulse_width)
 	pwmin_report.pulse_width = pulse_width;
 
 	_reports->force(&pwmin_report);
+
+	// Publish to uORB
+	_pwm_input_pub.get().timestamp = _last_poll_time;
+	_pwm_input_pub.get().error_count = _error_count;
+	_pwm_input_pub.get().timestamp = period;
+	_pwm_input_pub.get().pulse_width = pulse_width;
+
+	_pwm_input_pub.update();
 }
 
 /*
